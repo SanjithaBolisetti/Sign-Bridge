@@ -22,3 +22,16 @@ N/A
 
 ### Status
 Completed
+
+## Step 1.1 - Fixed Embedded Repository Issue
+
+### Issue
+Sign_avatar folder was added as an embedded Git repository (submodule).
+
+### Resolution
+- Removed from Git index
+- Deleted internal .git folder
+- Re-added as normal directory
+
+### Status
+Resolved Successfully
