@@ -92,3 +92,25 @@ N/A
 
 ### Status
 Completed
+
+## Step 5 - Created Integration Service Layer
+
+### Objective
+Introduce service layer so FastAPI endpoints do not directly call ML scripts.
+
+### Architecture Decision
+Added services for sign recognition and avatar generation, keeping main API thin with placeholder logic pending ML integration.
+
+### Actions Taken
+- Added backend/services with SignRecognitionService and SignAvatarService placeholders
+- Wired new POST /predict and /text-to-sign endpoints to call the services
+- Added lightweight request models to keep API contracts explicit
+
+### Issues Faced
+None
+
+### Resolution
+N/A
+
+### Status
+Completed
