@@ -73,3 +73,22 @@ N/A
 
 ### Status
 Completed
+
+## Step 4 - Dependency Consolidation
+
+### Objective
+Unify Python dependencies across FastAPI backend and existing sign_recognition assets.
+
+### Actions Taken
+- Collected ML and data pipeline imports from Sign_recognition
+- Consolidated dependencies into backend/requirements.txt (FastAPI, torch, opencv, mediapipe, pandas, numpy, sklearn, matplotlib, seaborn, Pillow, openpyxl)
+- Added Sign_recognition package shim to enable backend imports from legacy folder
+
+### Issues Found
+None
+
+### Resolution
+N/A
+
+### Status
+Completed
