@@ -15,10 +15,10 @@ Initialize integrated project structure.
 	- sign_avatar/
 
 ### Issues Faced
-None
+- mediapipe wheels for Python 3.14 lack `solutions` module; real-time landmark extraction unavailable in this environment
 
 ### Resolution
-N/A
+- Allowed /predict to accept pre-computed 63-length landmarks and integrated CNN inference; mediapipe path guarded to avoid runtime crash
 
 ### Status
 Completed
@@ -105,6 +105,28 @@ Added services for sign recognition and avatar generation, keeping main API thin
 - Added backend/services with SignRecognitionService and SignAvatarService placeholders
 - Wired new POST /predict and /text-to-sign endpoints to call the services
 - Added lightweight request models to keep API contracts explicit
+
+### Issues Faced
+None
+
+### Resolution
+N/A
+
+### Status
+Completed
+
+## Step 6 - Integrated Real Sign Recognition Model
+
+### Objective
+Hook FastAPI service to the actual CNN sign recognition pipeline.
+
+### Model Integrated
+CNNModel with alphabet weights (CNN_model_alphabet_SIBI.pth) from Sign_recognition.
+
+### Architecture Decisions
+- Load CNN once at service init on CPU, keep inference via service layer (no direct calls from FastAPI routes)
+- Use MediaPipe to extract hand landmarks, normalize, and feed tensor shaped (1, 63, 1)
+- Map predicted indices back to alphabet labels via local class map
 
 ### Issues Faced
 None
