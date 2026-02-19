@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import numpy as np
+import cv2
 
 from backend.services import SignAvatarService, SignRecognitionService
 
@@ -28,18 +30,22 @@ async def health_check():
     return {"status": "healthy"}
 
 
-class PredictRequest(BaseModel):
-    # Placeholder payload for frame data; replace with actual schema once integrated.
-    data: dict | None = None
-
-
 class TextToSignRequest(BaseModel):
     text: str
 
 
 @app.post("/predict")
-async def predict(req: PredictRequest):
-    return sign_recognition_service.predict_from_frame(req.data)
+async def predict(file: UploadFile = File(...)):
+    if file.content_type not in {"image/png", "image/jpeg", "image/jpg"}:
+        return {"error": "Unsupported file type. Use png or jpg/jpeg."}
+
+    contents = await file.read()
+    img_array = np.frombuffer(contents, dtype=np.uint8)
+    frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    if frame is None:
+        return {"error": "Could not decode image."}
+
+    return sign_recognition_service.predict_from_frame(frame)
 
 
 @app.post("/text-to-sign")

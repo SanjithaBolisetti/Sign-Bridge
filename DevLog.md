@@ -136,3 +136,21 @@ N/A
 
 ### Status
 Completed
+
+## Step 6.1 - Enabled Image Upload for /predict
+
+### Objective
+Allow /predict to accept image uploads from Swagger UI and route frames through the CNN service.
+
+### Changes Made
+- Updated /predict to use UploadFile, decode image to numpy via OpenCV, and call SignRecognitionService
+- Added basic content-type guard (jpg/png) and decode check
+
+### Issues Faced
+None
+
+### Resolution
+N/A
+
+### Status
+Completed
