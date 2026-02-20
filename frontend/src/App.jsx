@@ -1,34 +1,61 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
+import { Link, Route, Routes } from 'react-router-dom'
 import './App.css'
+import SignToText from './pages/SignToText.jsx'
 
-function App() {
-  const [count, setCount] = useState(0)
+const HEALTH_URL = 'http://127.0.0.1:8000/health'
+
+function Home() {
+  const [status, setStatus] = useState({ label: 'Checking backend...', ok: null })
+
+  useEffect(() => {
+    let isMounted = true
+    const checkHealth = async () => {
+      try {
+        const res = await fetch(HEALTH_URL)
+        if (!res.ok) throw new Error('Bad status')
+        const data = await res.json()
+        if (isMounted) {
+          const healthy = data?.status === 'healthy'
+          setStatus({ label: healthy ? 'Backend Connected ✅' : 'Backend Not Connected ❌', ok: healthy })
+        }
+      } catch (err) {
+        if (isMounted) setStatus({ label: 'Backend Not Connected ❌', ok: false })
+      }
+    }
+    checkHealth()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const statusClass = status.ok === null ? 'status neutral' : status.ok ? 'status ok' : 'status fail'
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="page">
+      <header className="hero">
+        <p className="eyebrow">SignBridge</p>
+        <h1>SignBridge - AI Sign Language System</h1>
+        <p className="subhead">Bridge sign and speech with a unified AI recognition and avatar pipeline.</p>
+
+        <div className="actions">
+          <Link to="/sign-to-text" className="primary">Sign to Text</Link>
+          <Link to="/text-to-sign" className="ghost" aria-disabled="true">Text to Sign</Link>
+        </div>
+
+        <div className={statusClass}>{status.label}</div>
+      </header>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/sign-to-text" element={<SignToText />} />
+      <Route path="/text-to-sign" element={<Home />} />
+    </Routes>
   )
 }
 

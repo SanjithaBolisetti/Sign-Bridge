@@ -176,3 +176,28 @@ N/A
 
 ### Status
 Completed
+
+## Step 8 - Implemented Real-Time Sign-to-Text Frontend
+
+### Objective
+Add webcam-driven sign-to-text page that streams frames to backend /predict.
+
+### Tools Used
+Vite + React 19, react-webcam, fetch API
+
+### Architecture Choice
+Used simple polling with setInterval to POST frames; WebSocket deferred for later.
+
+### Actions Taken
+- Added SignToText page with webcam feed, start/stop controls, prediction display
+- Wired routing (react-router) and navigation from home to sign-to-text
+- Posts captured JPEG frames via FormData to FastAPI /predict and renders response
+
+### Issues Faced
+None
+
+### Resolution
+N/A
+
+### Status
+Completed

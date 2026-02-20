@@ -1,0 +1,51 @@
+.webcam-wrap {
+  display: grid;
+  place-items: center;
+  margin: 1.25rem 0;
+}
+
+.webcam {
+  width: 100%;
+  max-width: 640px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 30px rgba(43, 56, 91, 0.12);
+}
+
+.section-title {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 1.6rem;
+  color: #111827;
+}
+
+.prediction-box {
+  margin-top: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.prediction-box .label {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.prediction-box .value {
+  font-size: 2.3rem;
+  font-weight: 700;
+  margin: 0.4rem 0;
+  color: #0f172a;
+}
+
+.prediction-box .confidence {
+  color: #374151;
+  font-weight: 600;
+}
+
+.error {
+  margin-top: 0.5rem;
+  color: #b91c1c;
+  font-weight: 600;
+}
