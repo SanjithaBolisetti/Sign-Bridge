@@ -3,33 +3,30 @@ import Webcam from 'react-webcam'
 import './SignToText.css'
 
 const PREDICT_URL = 'http://127.0.0.1:8000/predict'
-const CAPTURE_INTERVAL_MS = 1500
 
 function SignToText() {
   const webcamRef = useRef(null)
-  const intervalRef = useRef(null)
   const [prediction, setPrediction] = useState('—')
   const [confidence, setConfidence] = useState(null)
-  const [running, setRunning] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const stopLoop = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-    setRunning(false)
-  }
-
   useEffect(() => {
-    return () => stopLoop()
+    return () => {
+      // No interval cleanup needed; single-shot capture mode.
+    }
   }, [])
 
-  const sendFrame = async () => {
+  const captureOnce = async () => {
     if (!webcamRef.current) return
     const dataUrl = webcamRef.current.getScreenshot()
-    if (!dataUrl) return
+    if (!dataUrl) {
+      setError('Unable to capture from camera')
+      return
+    }
 
+    setLoading(true)
+    setError('')
     try {
       const blob = await (await fetch(dataUrl)).blob()
       const formData = new FormData()
@@ -39,21 +36,15 @@ function SignToText() {
         method: 'POST',
         body: formData,
       })
+
       const json = await res.json()
       setPrediction(json?.prediction ?? '—')
       setConfidence(typeof json?.confidence === 'number' ? json.confidence : null)
-      setError('')
     } catch (err) {
       setError('Failed to send frame')
+    } finally {
+      setLoading(false)
     }
-  }
-
-  const startLoop = () => {
-    if (running) return
-    setRunning(true)
-    setError('')
-    sendFrame()
-    intervalRef.current = setInterval(sendFrame, CAPTURE_INTERVAL_MS)
   }
 
   return (
@@ -67,17 +58,16 @@ function SignToText() {
             audio={false}
             ref={webcamRef}
             screenshotFormat="image/jpeg"
+            screenshotQuality={0.9}
+            screenshotWidth={640}
             className="webcam"
-            videoConstraints={{ facingMode: 'user' }}
+            videoConstraints={{ width: 640, height: 480, facingMode: 'user' }}
           />
         </div>
 
         <div className="actions">
-          <button type="button" className="primary" onClick={startLoop} disabled={running}>
-            Start Prediction
-          </button>
-          <button type="button" className="ghost" onClick={stopLoop} disabled={!running}>
-            Stop Prediction
+          <button type="button" className="primary" onClick={captureOnce} disabled={loading}>
+            {loading ? 'Capturing…' : 'Capture & Predict'}
           </button>
         </div>
 
@@ -87,6 +77,7 @@ function SignToText() {
           <div className="confidence">
             Confidence: {confidence !== null ? (confidence * 100).toFixed(2) + '%' : '—'}
           </div>
+          {loading ? <div className="loading">Running model…</div> : null}
           {error ? <div className="error">{error}</div> : null}
         </div>
       </div>

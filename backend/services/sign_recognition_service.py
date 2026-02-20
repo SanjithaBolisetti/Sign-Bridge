@@ -31,18 +31,32 @@ class SignRecognitionService:
 
         self._model = self._load_model()
 
-        self._hand_detector = None
-        self._mediapipe_available = hasattr(mp, "solutions") and hasattr(mp, "__file__")
-        if self._mediapipe_available:
-            try:
-                self._hand_detector = mp.solutions.hands.Hands(
-                    static_image_mode=True,
-                    min_detection_confidence=0.2,
-                )
-            except Exception:
-                # If current mediapipe build lacks solutions (e.g., py3.14 wheels), fall back to landmarks input path.
-                self._hand_detector = None
-                self._mediapipe_available = False
+        self.mp_hands = None
+        self.hands = None
+        mp_version = getattr(mp, "__version__", "unknown")
+        mp_file = getattr(mp, "__file__", "unknown")
+        has_solutions = hasattr(mp, "solutions")
+        print(f"[init] mediapipe version={mp_version}, file={mp_file}, has_solutions={has_solutions}")
+
+        self._mediapipe_available = True  # attempt and downgrade on failure
+        try:
+            self.mp_hands = mp.solutions.hands if has_solutions else None
+            if self.mp_hands is None:
+                raise RuntimeError("mediapipe.solutions.hands not present")
+
+            # static_image_mode=True because we submit one-off stills from the webcam button.
+            self.hands = self.mp_hands.Hands(
+                static_image_mode=True,
+                max_num_hands=2,
+                model_complexity=1,
+                min_detection_confidence=0.2,
+                min_tracking_confidence=0.2,
+            )
+            print("[init] hands created")
+        except Exception as exc:
+            print(f"[init] failed to create hands: {exc}")
+            self.hands = None
+            self._mediapipe_available = False
 
     def _weights_path(self) -> Path:
         base = Path(__file__).resolve().parents[2]  # project root
@@ -71,7 +85,8 @@ class SignRecognitionService:
                 return arr
             return None
 
-        if not self._mediapipe_available or self._hand_detector is None:
+        if not self._mediapipe_available or self.hands is None:
+            print(f"[mediapipe] unavailable or hands None: available={self._mediapipe_available}, hands={self.hands}")
             return None
 
         if frame is None:
@@ -83,11 +98,23 @@ class SignRecognitionService:
         else:
             return None
 
-        result = self._hand_detector.process(rgb)
-        if not result or not getattr(result, "multi_hand_landmarks", None):
+        rgb = np.ascontiguousarray(rgb)
+        rgb.flags.writeable = False
+
+        print(
+            f"[mediapipe] frame shape: {frame.shape if hasattr(frame, 'shape') else 'unknown'}, "
+            f"dtype={frame.dtype if hasattr(frame, 'dtype') else 'na'}"
+        )
+
+        results = self.hands.process(rgb)
+        print("results:", results)
+        mhl = results.multi_hand_landmarks if results else None
+        print("multi_hand_landmarks:", mhl)
+
+        if not mhl:
             return None
 
-        hand_landmarks = result.multi_hand_landmarks[0]
+        hand_landmarks = mhl[0]
         x_coords, y_coords, z_coords = [], [], []
         data = []
 
@@ -111,19 +138,34 @@ class SignRecognitionService:
         return np.array(data, dtype=np.float32)
 
     def predict_from_frame(self, frame: object):
-        """Run inference on a BGR frame or pre-computed landmarks and return top prediction with confidence."""
-        landmarks = self._extract_landmarks(frame)
-        if landmarks is None:
-            return {"prediction": "NO_HAND_DETECTED", "confidence": 0.0, "detail": "Provide landmarks[63] or enable mediapipe solutions."}
+        """Run MediaPipe hand detection then classify landmarks with the CNN model."""
+        print(f"[predict] frame type: {type(frame)}")
 
-        # Shape to (batch, channels, seq_len)
-        tensor = torch.from_numpy(landmarks).to(self.device)
-        tensor = tensor.view(1, 63, 1)
+        if frame is None:
+            return {"prediction": "NO_HAND_DETECTED", "confidence": 0.0}
+
+        precomputed_landmarks = None
+        if isinstance(frame, dict) and "landmarks" in frame:
+            print("[predict] received precomputed landmarks")
+            precomputed_landmarks = np.array(frame["landmarks"], dtype=np.float32)
+
+        if not isinstance(frame, np.ndarray) and precomputed_landmarks is None:
+            return {"prediction": "NO_HAND_DETECTED", "confidence": 0.0}
+
+        if isinstance(frame, np.ndarray):
+            print(f"[predict] frame shape: {frame.shape if hasattr(frame, 'shape') else 'unknown'}")
+
+        landmarks = precomputed_landmarks if precomputed_landmarks is not None else self._extract_landmarks(frame)
+
+        if landmarks is None:
+            return {"prediction": "NO_HAND_DETECTED", "confidence": 0.0}
+
+        tensor = torch.tensor(landmarks, dtype=torch.float32, device=self.device).view(1, 63, 1)
 
         with torch.no_grad():
             logits = self._model(tensor)
             probs = F.softmax(logits, dim=1)
-            conf, pred_idx = torch.max(probs, dim=1)
+            confidence, pred_idx = torch.max(probs, dim=1)
 
-        pred_label = self.idx_to_class.get(int(pred_idx.item()), "UNKNOWN")
-        return {"prediction": pred_label, "confidence": float(conf.item())}
+        pred_class = self.idx_to_class.get(pred_idx.item(), "?")
+        return {"prediction": pred_class, "confidence": float(confidence.item())}

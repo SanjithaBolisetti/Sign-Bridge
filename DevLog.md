@@ -201,3 +201,39 @@ N/A
 
 ### Status
 Completed
+
+## Step 8.1 - Debugged MediaPipe Hand Detection
+
+### Objective
+Resolve missing hand landmarks in MediaPipe pipeline to enable predictions.
+
+### Root Cause Identified
+BGR frames were not consistently converted to RGB; MediaPipe confidence thresholds were too low, and detection status wasn’t surfaced.
+
+### Fix Applied
+- Enforced BGR→RGB conversion before MediaPipe processing
+- Raised min_detection_confidence and min_tracking_confidence to 0.5
+- Added debug logging for frame shape and detected hand count
+
+### Status
+Completed
+
+## Step 9 - Recreated Environment and MediaPipe Solutions Fix
+
+### Objective
+Restore hand landmark detection by moving off Python 3.14 wheels that lacked `mediapipe.solutions` and stabilize capture flow.
+
+### Actions Taken
+- Stopped all dev servers and rebuilt the virtual environment with Python 3.11 (`py -3.11 -m venv .venv`).
+- Installed dependencies on the new venv, including mediapipe 0.10.14 (with `solutions.hands`), python-multipart, and torch CPU wheels.
+- Verified mediapipe reports `has_solutions=True` and `hands` is available.
+- Updated SignToText UI to single-shot capture with 640x480 JPEGs, loading indicator, and disabled repeat submissions during inference.
+
+### Issues Faced
+- mediapipe 0.10.32 (Python 3.14) lacked `solutions`; `Hands` could not initialize and always returned NO_HAND_DETECTED.
+
+### Resolution
+- Switched to Python 3.11 venv and mediapipe 0.10.14, restoring `solutions.hands` availability.
+
+### Status
+Completed

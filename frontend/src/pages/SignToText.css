@@ -44,8 +44,27 @@
   font-weight: 600;
 }
 
+.loading {
+  margin-top: 0.5rem;
+  color: #0ea5e9;
+  font-weight: 700;
+  animation: pulse 1s ease-in-out infinite;
+}
+
 .error {
   margin-top: 0.5rem;
   color: #b91c1c;
   font-weight: 600;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
