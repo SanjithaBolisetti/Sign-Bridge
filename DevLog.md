@@ -154,3 +154,25 @@ N/A
 
 ### Status
 Completed
+
+## Step 7 - React Frontend Initialization
+
+### Objective
+Create a minimal Vite + React frontend that surfaces navigation and checks backend health.
+
+### Tools Used
+Vite + React 19
+
+### Actions Taken
+- Initialized Vite app in frontend/
+- Built centered hero UI with title, Sign to Text, and Text to Sign buttons
+- Implemented GET /health call on load to display backend connectivity status
+
+### Issues Faced
+None
+
+### Resolution
+N/A
+
+### Status
+Completed
